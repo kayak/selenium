@@ -1,3 +1,10 @@
+## v3.6.1-k2
+
+### Changes
+
+* The default HttpClient will now attach cookies it receives in a response (in
+  `Set-Cookie` header) to all subsequent requests
+
 ## v3.6.0
 
 ### Bug Fixes

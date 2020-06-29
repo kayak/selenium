@@ -27,6 +27,7 @@ const https = require('https');
 const url = require('url');
 
 const httpLib = require('../lib/http');
+const { CookieJar, Cookie } = require('tough-cookie');
 
 
 /**
@@ -86,6 +87,11 @@ class HttpClient {
      * @private {?RequestOptions}
      */
     this.proxyOptions_ = opt_proxy ? getRequestOptions(opt_proxy) : null;
+
+    /**
+     * @private {?CookieJar}
+     */
+    this.cookieJar_ = new CookieJar();
   }
 
   /** @override */
@@ -130,7 +136,7 @@ class HttpClient {
     };
 
     return new Promise((fulfill, reject) => {
-      sendRequest(options, fulfill, reject, data, this.proxyOptions_);
+      sendRequest(options, fulfill, reject, this.cookieJar_, data, this.proxyOptions_);
     });
   }
 }
@@ -142,13 +148,14 @@ class HttpClient {
  * @param {function(!httpLib.Response)} onOk The function to call if the
  *     request succeeds.
  * @param {function(!Error)} onError The function to call if the request fails.
+ * @param {?CookieJar=} cookieJar The cookie store.
  * @param {?string=} opt_data The data to send with the request.
  * @param {?RequestOptions=} opt_proxy The proxy server to use for the request.
  */
-function sendRequest(options, onOk, onError, opt_data, opt_proxy) {
+function sendRequest(options, onOk, onError, cookieJar, opt_data, opt_proxy) {
   var hostname = options.hostname;
   var port = options.port;
-
+  
   if (opt_proxy) {
     let proxy = /** @type {RequestOptions} */(opt_proxy);
 
@@ -177,6 +184,12 @@ function sendRequest(options, onOk, onError, opt_data, opt_proxy) {
       options.headers['Proxy-Authorization'] =
           'Basic ' + new Buffer(proxy.auth).toString('base64');
     }
+  }
+
+  const cookieUrl = `${options.protocol}//${hostname}`;
+  const cookieString = cookieJar.getCookieStringSync(cookieUrl, {});
+  if (cookieString && cookieString.length > 0) {
+    options.headers['cookie'] = cookieJar.getCookieStringSync(cookieUrl, {});
   }
 
   let requestFn = options.protocol === 'https:' ? https.request : http.request;
@@ -210,7 +223,7 @@ function sendRequest(options, onOk, onError, opt_data, opt_proxy) {
         headers: {
           'Accept': 'application/json; charset=utf-8'
         }
-      }, onOk, onError, undefined, opt_proxy);
+      }, onOk, onError, cookieJar, undefined, opt_proxy);
       return;
     }
 
@@ -221,6 +234,11 @@ function sendRequest(options, onOk, onError, opt_data, opt_proxy) {
           /** @type {number} */(response.statusCode),
           /** @type {!Object<string>} */(response.headers),
           body.join('').replace(/\0/g, ''));
+      const setCookieHeader = resp.headers.get('set-cookie');
+      if (setCookieHeader) {
+        console.log(`[selenium-webdriver/http] Storing request cookie: ${setCookieHeader}`);
+        cookieJar.setCookieSync(Cookie.parse(setCookieHeader + ""), cookieUrl);
+      }
       onOk(resp);
     });
   });
@@ -228,7 +246,7 @@ function sendRequest(options, onOk, onError, opt_data, opt_proxy) {
   request.on('error', function(e) {
     if (e.code === 'ECONNRESET') {
       setTimeout(function() {
-        sendRequest(options, onOk, onError, opt_data, opt_proxy);
+        sendRequest(options, onOk, onError, cookieJar, opt_data, opt_proxy);
       }, 15);
     } else {
       var message = e.message;

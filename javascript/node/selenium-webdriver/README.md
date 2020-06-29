@@ -4,6 +4,9 @@ Selenium is a browser automation library. Most often used for testing
 web-applications, Selenium may be used for any task that requires automating
 interaction with the browser.
 
+This the default HttpClient has been updated to attach cookies to received from
+the initial request to every request thereafter.
+
 ## Installation
 
 Selenium may be installed via npm with

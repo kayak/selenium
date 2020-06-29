@@ -56,6 +56,17 @@ describe('HttpClient', function() {
       res.writeHead(303, {});
       res.end();
 
+    } else if (req.method == 'GET' && req.url == '/setcookie') {
+        res.writeHead(200, req.headers);
+        let headers = Object.assign({}, req.headers);
+        headers['set-cookie'] = 'name=c:o/o/k.i:e; Path=/; HttpOnly'
+        res.writeHead(200, headers);
+        res.end();
+  
+    } else if (req.method == 'GET' && req.url == '/readcookie') {
+        res.writeHead(200, {'content-type': 'text/plain'});
+        res.end('' + req.headers['cookie']);
+  
     } else if (req.method == 'GET' && req.url == '/protected') {
       var denyAccess = function() {
         res.writeHead(401, {'WWW-Authenticate': 'Basic realm="test"'});
@@ -177,6 +188,19 @@ describe('HttpClient', function() {
     return client.send(request).then(assert.fail, function(err) {
       assert.ok(/Failed to parse "Location"/.test(err.message),
           'Not the expected error: ' + err.message);
+    });
+  });
+
+  it('sets request cookie', function() {
+    var setRequest = new HttpRequest('GET', '/setcookie');
+    var readRequest = new HttpRequest('GET', '/readcookie');
+
+    var client = new HttpClient(server.url());
+    return client.send(setRequest).then(function() {
+        return client.send(readRequest).then(function(response) {
+            assert.equal(200, response.status);
+            assert.equal(response.body, 'name=c:o/o/k.i:e');
+        });
     });
   });
 
