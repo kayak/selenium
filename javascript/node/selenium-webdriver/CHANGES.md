@@ -1,3 +1,9 @@
+## v3.6.1-k3
+
+### Bug Fixes
+
+* Fixes included atoms
+
 ## v3.6.1-k2
 
 ### Changes

@@ -1,6 +1,6 @@
 {
   "name": "selenium-webdriver",
-  "version": "3.6.1-k2",
+  "version": "3.6.1-k3",
   "description": "The official WebDriver JavaScript bindings from the Selenium project",
   "license": "Apache-2.0",
   "keywords": [
@@ -10,14 +10,14 @@
     "webdriver",
     "webdriverjs"
   ],
-  "homepage": "https://github.com/SeleniumHQ/selenium",
+  "homepage": "https://github.com/kayak/selenium",
   "bugs": {
     "url": "https://github.com/SeleniumHQ/selenium/issues"
   },
   "main": "./index",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SeleniumHQ/selenium.git"
+    "url": "git@github.com:kayak/selenium.git"
   },
   "engines": {
     "node": ">= 6.9.0"
